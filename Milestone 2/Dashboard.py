@@ -33,30 +33,30 @@ total_orders = sales["Order Date"].count()
 avg_shipping_time = sales["Shipping Time (Days)"].mean().round(2)
 
 fig1_DataPickerRange = dcc.DatePickerRange(
-                            id='fig1_DataPickerRange',
-                            start_date=sales['Order Date'].min(),
-                            end_date=sales['Order Date'].max(),
-                            display_format='YYYY-MM-DD', 
-                            className="fig1_DataPickerRange"
-                        )
+    id='fig1_DataPickerRange',
+    start_date=sales['Order Date'].min(),
+    end_date=sales['Order Date'].max(),
+    display_format='YYYY-MM-DD', 
+    className="fig1_DataPickerRange"
+)
 fig1_Dropdown = dcc.Dropdown(
-                    id='fig1_Dropdown',
-                    options=[
-                        {'label': 'Sales', 'value': 'Sales'},
-                        {'label': 'Profit', 'value': 'Profit'}
-                    ],
-                    value='Sales', 
-                    className="fig1_Dropdown"
-                )
+    id='fig1_Dropdown',
+    options=[
+        {'label': 'Sales', 'value': 'Sales'},
+        {'label': 'Profit', 'value': 'Profit'}
+    ],
+    value='Sales', 
+    className="fig1_Dropdown"
+)
 fig1_Slider = dcc.Slider(
-                id='fig1_Slider',
-                min=7,
-                max=30,
-                step=7,
-                marks={7: '7D', 14: '14D', 30: '30D'},
-                value=7,
-                className="fig1_Slider"
-            )
+    id='fig1_Slider',
+    min=7,
+    max=30,
+    step=7,
+    marks={7: '7D', 14: '14D', 30: '30D'},
+    value=7,
+    className="fig1_Slider"
+)
 fig1 = dcc.Graph(id='fig1', className="fig1")
 
 fig2_Dropdown = dcc.Dropdown(
@@ -111,8 +111,42 @@ fig3_checkList = dcc.Checklist(
 )
 fig3 = dcc.Graph(id='fig3', className="fig3")
 
-# ::::::::::::::::::::::::::::::::::::::::::::::: Functions :::::::::::::::::::::::::::::::::::::::::::::::
+fig4_Radioitems = dcc.RadioItems(
+    id='fig4_Radioitems',
+    options=[
+        {'label': 'Day of Week vs. Month', 'value': 'heatmap'},
+        {'label': 'Monthly Trends', 'value': 'line'}
+    ],
+    value='heatmap',
+    className="fig4_Radioitems",
+    inline=True
+)
+fig4_Dropdown = dcc.Dropdown(
+    id='fig4_Dropdown',
+    options=[{'label': cat, 'value': cat} for cat in sales['Category'].unique()],
+    value=sales['Category'].unique()[0],
+    className="fig4_Dropdown",
+    clearable=False
+)
+fig4 = dcc.Graph(id='fig4', className="fig4")
 
+fig5_RangeSlider = dcc.RangeSlider(
+    id='fig5_RangeSlider',
+    min=main['Discount'].min(),
+    max=main['Discount'].max(),
+    step=0.05,
+    marks={i: f"{i:.2f}" for i in np.arange(0, main['Discount'].max() + 0.1, 0.1)},
+    value=[main['Discount'].min(), main['Discount'].max()],
+    className="fig5_RangeSlider"
+)
+fig5_Dropdown = dcc.Dropdown(
+    id='fig5_Dropdown',
+    options=[{'label': 'All', 'value': 'All'}] + [{'label': cat, 'value': cat} for cat in sales['Category'].unique()],
+    value='All',
+    className="fig5_Dropdown",
+    clearable=False
+)
+fig5 = dcc.Graph(id='fig5', className="fig5")
 
 # ::::::::::::::::::::::::::::::::::::::::::::::: App Layout ::::::::::::::::::::::::::::::::::::::::::::::
 app = Dash(__name__, external_stylesheets = external_stylesheets)
@@ -184,9 +218,28 @@ app.layout = html.Div([
             fig3
         ], className="first_column"),
         html.Div([
-
+            html.H2("Seasonality & Time Patterns"),
+            html.Div([
+                fig4_Dropdown,
+                fig4_Radioitems
+            ], className="fig4_mini_div"),
+            fig4
         ], className="second_column")
-    ], id="third_row")
+    ], id="third_row"),
+    html.Br(),
+    html.Br(),
+    html.Div([
+        html.Div([
+            html.H2("Discount Impact on Profit"),
+            html.Div([
+                fig5_RangeSlider,
+                fig5_Dropdown
+            ], className="fig5_mini_div"),
+            fig5
+        ], className="fourth_row")  
+    ], id="fourth_row"),
+    html.Br(),
+    html.Br()
 ], id="body")
 
 # :::::::::::::::::::::::::::::::::::::::::::::: Callbacks ::::::::::::::::::::::::::::::::::::::::::::::
@@ -198,7 +251,7 @@ app.layout = html.Div([
     Input('fig1_Dropdown', 'value')]
 )
 def update_graph(start_date, end_date, ma_window, measure):
-    filtered_df = sales[(sales['Order Date'] >= start_date) & (sales['Order Date'] <= end_date)]
+    filtered_df = sales[(sales['Order Date'] >= start_date) & (sales['Order Date'] <= end_date)].copy()
     filtered_df = filtered_df.sort_values('Order Date')
     filtered_df['Moving_Avg'] = filtered_df[measure].rolling(window=ma_window).mean()
     
@@ -215,6 +268,8 @@ def update_graph(start_date, end_date, ma_window, measure):
         title_x=0.5,
         margin=dict(l=40, r=40, t=40, b=40)
     )
+    if measure == "Profit":
+        fig1.update_layout(yaxis=dict(range=[sales["Profit"].min(), sales["Profit"].max()]))
     return fig1
 
 @callback(
@@ -224,7 +279,6 @@ def update_graph(start_date, end_date, ma_window, measure):
 )
 def update_sales_by_region(selected_category, selected_metric):
     if selected_category == "Country":
-        # Create a Choropleth Map when 'Country' is selected
         grouped_df = sales.groupby("Country")[selected_metric].sum().reset_index()
 
         fig2 = px.choropleth(
@@ -236,7 +290,6 @@ def update_sales_by_region(selected_category, selected_metric):
             color_continuous_scale="viridis"  # Change to 'viridis' or other themes if needed
         )
     else:
-        # Create a Bar Chart for Region or Market
         grouped_df = sales.groupby(selected_category)[selected_metric].sum().reset_index()
 
         fig2 = px.bar(
@@ -247,7 +300,6 @@ def update_sales_by_region(selected_category, selected_metric):
             color=selected_category,
             text_auto=True
         )
-    # Apply the same dashboard styling
     fig2.update_layout(
         plot_bgcolor=root["background1"],
         paper_bgcolor=root["background2"],
@@ -269,15 +321,12 @@ def update_sales_by_region(selected_category, selected_metric):
     ]
 )
 def update_graph3(chart_type, measure, selected_categories):
-    # Filter data to selected categories
     filtered_df = sales[sales['Category'].isin(selected_categories)]
 
-    # Group by Category and Sub-Category
     grouped_df = filtered_df.groupby(['Category', 'Sub-Category'])[measure].sum().reset_index()
 
-    # Create the chart
     if chart_type == 'treemap':
-        fig = px.treemap(
+        fig3 = px.treemap(
             grouped_df,
             path=['Category', 'Sub-Category'],
             values=measure,
@@ -285,7 +334,7 @@ def update_graph3(chart_type, measure, selected_categories):
             title=f'{measure} by Category and Sub-Category'
         )
     else:
-        fig = px.bar(
+        fig3 = px.bar(
             grouped_df,
             x=measure,
             y='Sub-Category',
@@ -295,7 +344,7 @@ def update_graph3(chart_type, measure, selected_categories):
             title=f'{measure} by Category and Sub-Category'
         )
 
-    fig.update_layout(
+    fig3.update_layout(
         plot_bgcolor=root['background1'],
         paper_bgcolor=root['background2'],
         font_color=root['text'],
@@ -303,7 +352,74 @@ def update_graph3(chart_type, measure, selected_categories):
         margin=dict(l=40, r=40, t=40, b=40)
     )
     
-    return fig
+    return fig3
+
+@callback(
+    Output('fig4', 'figure'),
+    [Input('fig4_Radioitems', 'value'),
+    Input('fig4_Dropdown', 'value')]
+)
+def update_seasonality(view_type, category):
+    filtered_df = sales[sales['Category'] == category].copy()
+    filtered_df['Order Date'] = pd.to_datetime(filtered_df['Order Date'])
+    filtered_df['Month'] = filtered_df['Order Date'].dt.strftime('%b')
+    filtered_df['Day of Week'] = filtered_df['Order Date'].dt.day_name()
+    
+    if view_type == 'heatmap':
+        pivot_table = filtered_df.pivot_table(index='Day of Week', columns='Month', values='Total_sales', aggfunc='sum')
+        fig4 = px.imshow(
+            pivot_table,
+            labels=dict(x="Month", y="Day of Week", color="Sales"),
+            title=f"Sales Heatmap for {category}"
+        )
+    else:
+        monthly_sales = filtered_df.groupby('Month')['Total_sales'].sum().reset_index()
+        fig4 = px.line(
+            monthly_sales, x='Month', y='Total_sales', title=f"Monthly Sales Trend for {category}")
+    
+    fig4.update_layout(
+        plot_bgcolor=root['background1'],
+        paper_bgcolor=root['background2'],
+        font_color=root['text'],
+        template='plotly_dark',
+        title_x=0.5,
+        margin=dict(l=40, r=40, t=40, b=40)
+    )
+    return fig4
+
+@callback(
+    Output('fig5', 'figure'),
+    [Input('fig5_RangeSlider', 'value'),
+    Input('fig5_Dropdown', 'value')]
+)
+def update_discount_impact(selected_discount_range, selected_category):
+    filtered_df = sales[
+        (sales['Discount'] >= selected_discount_range[0]) &
+        (sales['Discount'] <= selected_discount_range[1])
+    ].copy()
+
+    if selected_category != 'All':
+        filtered_df = filtered_df[filtered_df['Category'] == selected_category]
+
+    fig5 = px.scatter(
+        filtered_df, x='Discount', y='Profit',
+        color='Category',
+        title="Impact of Discount on Profit",
+        trendline="ols"
+    )
+
+    fig5.update_layout(
+        plot_bgcolor=root['background1'],
+        paper_bgcolor=root['background2'],
+        font_color=root['text'],
+        xaxis_title='Discount',
+        yaxis_title='Profit',
+        template='plotly_dark',
+        title_x=0.5,
+        margin=dict(l=40, r=40, t=40, b=40)
+    )
+
+    return fig5
 
 # ::::::::::::::::::::::::::::::::::::::::::::::: Run App :::::::::::::::::::::::::::::::::::::::::::::::
 if __name__ == "__main__":

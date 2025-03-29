@@ -4,6 +4,7 @@
     --text3: #e8f5fc;
     --background1: #070e12;
     --background2: #333333;
+    --background3: #2323238e;
     --primary: #9ebfd6;
     --secondary: #9ebfd6;
     --accent: #2ea2dc;
@@ -89,8 +90,11 @@ body{
     transition: .4s;
 }
 
-.first_column, .second_column{
+.first_column, .second_column, .fourth_row{
     width: 45%;
+    background-color: var(--background3);
+    border-radius: 20px;
+    padding: 23px 17px;
 
     h2{
         font-size: 30px;
@@ -123,7 +127,7 @@ body{
 .fig1_Slider{
     margin: 10px 10px;
 }
-.fig1, .fig2, .fig3{
+.fig1, .fig2, .fig3, .fig4, .fig5{
     margin: 5px 0 20px 0;
     border-radius: 10px;
 }
@@ -132,7 +136,7 @@ body{
     display: flex;
     justify-content: space-around;
     align-items: center;
-    margin: 0px 10px 58px 10px;
+    margin: 0px 10px 59px 10px;
     
     .fig2_Radioitems{
         width: 250px;
@@ -198,5 +202,67 @@ body{
         input{
             margin-right: 20px; 
         }
+    }
+}
+
+.fig4_mini_div{
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin: 0px 10px 48px 10px;
+
+    .fig4_Dropdown{
+        width: 200px;
+        margin: 10px 0;
+    }
+    .fig4_Radioitems{
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        flex-direction: column;
+
+        label{
+            font-size: 1.2rem;
+            margin: 10px 0 0 0;
+
+            input{
+                margin-right: 15px;
+            }
+        }
+    }
+}
+
+.fig1_mini_div, .fig2_mini_div, .fig3_mini_div, .fig4_mini_div, .fig5_mini_div{
+    border-radius: 20px;
+    padding: 5px 13px;
+    border: 1px solid var(--text);
+}
+
+.user-select-none svg-container{
+    border-radius: 20px;
+}
+
+#fourth_row{
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 80%;
+
+    .fourth_row{
+        width: 70%;
+    }
+    .fig5_mini_div{
+        padding: 10px 13px;
+        display: flex;
+        justify-content: space-around;
+        flex-direction: column;
+        margin: 0 0 20px 0;
+    }
+    .fig5_Dropdown{
+        width: 300px;
+        margin: 10px 0;
+        margin-left: 5%;
     }
 }
